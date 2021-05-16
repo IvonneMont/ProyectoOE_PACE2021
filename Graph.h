@@ -23,7 +23,10 @@ class Graph
         vector<int>sizes;
         vector<unordered_set<int>>cliques;
         vector<long long>descriptores;
+        vector<pair<int,vector<int>>>des;
         vector<pair<int,int>>m_edges;//lista de aristas modificadas
+        vector<pair<int,int>>rangos;
+        long long costo;
 
     public:
         vector<int>solution;
@@ -39,8 +42,11 @@ class Graph
         void random_solution();
         void print_solution();
         void print_cliques();
+        void print_des();
         long long busqueda_local_ee(vector<int>&s_0);
+        long long busqueda_local_ee2(vector<int>&s_0);
         void inicializar_descriptores();
+        void inicializar_descriptores2();
         void build_m_edges();
         void save_solution(string file_out);
         void print_edges();

@@ -43,7 +43,7 @@ void Graph::bfs(const int u){
 
 void Graph::connectedComponents()
 {
-    identificador_componente = vector<int>(adj.size(), -1);
+  identificador_componente = vector<int>(adj.size(), -1);
 	for (int i = 0; i < adj.size(); ++i) {
 			if (identificador_componente[i] >= 0)
 				continue;
@@ -52,10 +52,17 @@ void Graph::connectedComponents()
 			sizes.push_back(1);
 			bfs(i);
 	}
-    cc.resize(sizes.size());
-    for(int i=0; i<identificador_componente.size(); i++){
-        cc[identificador_componente[i]].push_back(i);
-    }
+  cc.resize(sizes.size());
+  
+  for(int i=0; i<identificador_componente.size(); i++){
+        cc[identificador_componente[i]].push_back(i);    
+  }
+  long long rango=0;
+  rangos.resize(cc.size(),{-1,-1});
+  for(int j=0; j<cc.size(); j++){
+      rangos[j]={rango,rango+sizes[j]-1};
+      rango+=sizes[j];
+  }
 }
 void Graph::printGraph() const
 		{
@@ -69,10 +76,10 @@ void Graph::printGraph() const
 void Graph::printCC() const
 {
     for (int i = 0; i <cc.size(); ++i) {
-        cout << i << ": ";
-		for(int j=0; j<cc[i].size(); j++)
+       cout <<i<<" "<<sizes[i]<<" R "<<rangos[i].first<<" "<<rangos[i].second<<": ";
+		  for(int j=0; j<cc[i].size(); j++)
             cout<<cc[i][j]<<" ";
-		cout << '\n';
+		  cout << '\n';
 	}
 }
 
@@ -94,11 +101,12 @@ void Graph::random_solution(){
     cliques=vector<unordered_set<int>>(adj.size());
     solution.clear();
     for(int i=0; i<adj.size(); i++){
-        int cq=rand()%adj.size();
+        int min=rangos[identificador_componente[i]].first;
+        int max=rangos[identificador_componente[i]].second;
+        int cq=rand()%(max-min+1)+min;
         cliques[cq].insert(i);
         solution.push_back(cq);
     }
-
 }
 void Graph::print_solution(){
     for(int i=0; i<solution.size(); i++)
@@ -172,12 +180,66 @@ long long Graph::busqueda_local_ee(vector<int>&s_0){
     
 
   }
+  costo=costo_s0;
+  return costo_s0;
+}
+long long Graph::busqueda_local_ee2(vector<int>&s_0){
+  long long costo_s0,costo2;
+  long long pos;
+  int pv,pc,v,c;
+  int flag=0;
+  costo_s0=evaluate_solution(s_0);
+  costo2=costo_s0+1;
+  int num_clanes=adj.size();
+  while(flag<1){
+    inicializar_descriptores2();
+    while(des.size()>0&&costo_s0<=costo2){
+      pv=rand()%des.size();//elige vertice
+      pc=rand()%des[pv].second.size(); //elige clan
+      v=des[pv].first;//vertice
+      c=des[pv].second[pc];//clique
+      swap(des[pv].second[pc],des[pv].second[des[pv].second.size()-1]);
+      des[pv].second.pop_back();//elimina el descriptor comprobado
+      if(des[pv].second.size()==0){
+        swap(des[pv],des[des.size()-1]);//elimina el vertice sin conjuntos disponible
+        des.pop_back();
+      }
+      costo2=evaluacion_incremental(s_0,costo_s0,v,c);
+    }
+    if(costo2<costo_s0)//se encontro un vecino mejor
+      {
+        costo_s0=costo2;
+        costo2=costo_s0+1;
+        cliques[s_0[v]].erase(v);
+        cliques[c].insert(v);
+        s_0[v]=c;
+       
+      }
+    else{//el actual es el mejor de su vecindad
+        flag=1;
+    }
+    
+
+  }
+  costo=costo_s0;
   return costo_s0;
 }
 void Graph::inicializar_descriptores(){
   descriptores.clear();
   for(long long i=0; i<adj.size()*adj.size(); i++)
     descriptores.push_back(i);
+}
+void Graph::inicializar_descriptores2(){
+  des.clear();
+  for(long long i=0; i<adj.size(); i++){
+    long long tam=rangos[identificador_componente[i]].second-rangos[identificador_componente[i]].first;
+    if (tam>0){//evitar puntos aislados
+      vector<int>conjuntos;
+      for (long long j=rangos[identificador_componente[i]].first; j<=rangos[identificador_componente[i]].second; j++)
+        conjuntos.push_back(j);
+      des.push_back({i,conjuntos});
+    }
+  }
 }
 
 void Graph::build_m_edges(){
@@ -193,9 +255,9 @@ void Graph::build_m_edges(){
 
 void Graph::save_solution(string file_out){
     ofstream canal_salida;
-    cout<<file_out[0];
     canal_salida.open(file_out);
     if(canal_salida){
+      canal_salida<<costo<<"\n";
       for(long long i=0; i<m_edges.size(); i++)
         canal_salida<<m_edges[i].first+1<<" "<<m_edges[i].second+1<<"\n";
 
@@ -209,4 +271,14 @@ void Graph::print_edges(){
       for(long long i=0; i<m_edges.size(); i++)
         cout<<m_edges[i].first+1<<" "<<m_edges[i].second+1<<"\n";
 
+}
+
+void Graph::print_des(){
+  for (int i=0; i<des.size(); i++){
+    cout<<des[i].first<<": ";
+    for(int j=0; j<des[i].second.size(); j++){
+      cout<<des[i].second[j]<<" ";
+    }
+    cout<<"\n";
+  }
 }

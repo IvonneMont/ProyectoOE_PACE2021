@@ -11,30 +11,36 @@ int main(int argc, char** argv)
 {
     int semilla;
 
-	if (argc < 4) {
-		std::cerr << "usage: verifer [graph file] [semilla] [file out]" << std::endl;
+	if (argc < 5) {
+		std::cerr << "usage: verifer [graph file] [semilla] [file out] [metodo]" << std::endl;
 		return -1;
 	}
     semilla=atoi(argv[2]);
+    int tipo_bl=atoi(argv[4]);
     string file_out=argv[3];
     srand(semilla);
 	Graph G;
-    if (ifstream ifs{ argv[1] }; ifs) {
+    ifstream canal_entrada;
+    canal_entrada.open(argv[1]);
+    if (canal_entrada) {
 		try {
-				G = Graph(ifs);
+				G = Graph(canal_entrada);
 				//G.printGraph();
-               //cout<<"\n";
+                //cout<<"\n";
                 G.connectedComponents();
                 //G.printCC();
+                G.inicializar_descriptores2();
                 G.random_solution();
                 //G.print_solution();
-                cout<<"\n"<<G.evaluate_solution(G.solution)<<"\n";
+                //cout<<G.evaluate_solution(G.solution)<<"\n";
                 //G.print_cliques();
-                cout<<"\n"<<G.busqueda_local_ee(G.solution)<<"\n";
-                cout<<"\n"<<G.evaluate_solution(G.solution)<<"\n";
+                if(tipo_bl==1)
+                    G.busqueda_local_ee(G.solution);
+                else
+                    G.busqueda_local_ee2(G.solution);
                 G.build_m_edges();
                 G.save_solution(file_out);
-                G.print_edges();
+                //G.print_edges();
                 //G.print_solution();
 			}
 			catch (const std::invalid_argument& ia) {
