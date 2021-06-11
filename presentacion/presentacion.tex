@@ -1,0 +1,139 @@
+\documentclass[10pt]{beamer}
+\usetheme{Montpellier}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\setbeamertemplate{footline}[frame number]
+\author[Ivonne] 
+{Ivonne Monter Aldana\\ivonne.monter@cimat.mx}
+
+\institute[VFU] 
+{
+  CIMAT
+}
+\title{PACE 2021-Cluster Editing\\Optimización Estocástica}{}
+\setbeamercovered{transparent} 
+\setbeamertemplate{navigation symbols}{} 
+\logo{\includegraphics[height=1cm]{logo.png}}
+\date{27 de mayo de 2021} 
+\begin{document}
+\titlepage
+\begin{frame}{Tabla de Contenido}
+\tableofcontents
+\end{frame}
+\AtBeginSection[]
+{
+  \begin{frame}
+    \frametitle{Tabla de Contenido}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+\section{Introducción}
+\subsection{Cluster Editing}
+\begin{frame}{Cluster Editing}
+El problema de Cluster Editing consiste en transformar una gráfica en una unión disjunta de gráficas completas usando un mínimo número de modificaciones de aristas.
+\begin{figure}
+\includegraphics[scale=0.3]{ej.png}
+\end{figure}
+\end{frame}
+\begin{frame}{Aplicaciones}
+\begin{itemize}
+\item Detección a gran escala de genes homólogos.
+\item Modelar las interacciones entre proteínas.
+\item Detección de componentes patógenos.
+\item Análisis de redes sociales.
+\end{itemize}
+\end{frame}
+\begin{frame}{Complejidad del problema}
+\begin{itemize}
+\item En 1986 los matemáticos Mirko Křivánek y Jaroslav Morávek probaron que el problema de Cluster Editing es NP-hard.
+
+\item Para gráficas de a lo más grado dos, es decir caminos y círculos el problema se puede resolver en tiempo polinomial.
+\end{itemize}
+
+\end{frame}
+\subsection{Complejidad del problema}
+\section{Reto}
+\begin{frame}{Objetivo}
+La tarea es encontrar la mejor solución para cada instancia en un tiempo límite de 10 minutos e imprimir la lista de aristas modificadas en menos de 30 segundos
+\begin{figure}
+\includegraphics[scale=0.2]{heur.png}
+\end{figure}
+\end{frame}
+\section{Método implementado}
+\subsection{Representación de las soluciones}
+\begin{frame}{Representación de las soluciones}
+\begin{itemize}
+\item El número de clusters es a lo más el número de vértices de la gráfica.
+\item Dada una gráfica $G(V,E)$ no dirigida, las soluciones al problema se representan como vectores en $\mathbb{N}^{|V|}$, donde cada componente pertenece al conjunto $\{1,2,\ldots,|V|\}$.
+\item La dimensión del espacio de búsqueda es $V^{|V|}$.
+\begin{figure}
+\includegraphics[scale=0.45]{ERS.png}
+\end{figure}
+\end{itemize}
+\end{frame}
+
+\subsection{Data Reduction}
+\begin{frame}{Data Reduction}
+\begin{itemize}
+\item Dos vértices $u$ y $v$ son gemelos si $v\sim u$ y $N(v)=N(u)$.
+\item La propiedad de ser gemelos es transitiva.
+\item La reducción consiste en compactar conjuntos de vértices gemelos entre si a un solo vértice.
+\end{itemize}
+
+\begin{figure}
+\includegraphics[scale=0.35]{EVG.png}
+\caption{5 y 7 son gemelos y también 1 y 3}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Gráfica de la reducción de dimensión}
+\begin{figure}[H]
+\includegraphics[scale=0.16]{GR.png}
+\end{figure}
+\end{frame}
+\subsection{Casos especiales: Gráficas fuertemente conexas}
+\begin{frame}{Casos especiales: Gráficas fuertemente conexas}
+´\begin{itemize}
+\item Algunas instancias corresponden a gráficas en el que el número de aristas es cercano al número de aristas de un gráfica completa.
+
+\item Si le faltan manos del 10\% de aristas para ser una gráfica completa, entonces todos los vértices se colocan en un mismo cluster.
+\begin{table}[H]
+\resizebox{9cm}{!}{
+\begin{tabular}{|r|r|r|r|r|}
+\hline
+Instancia&$|E|$&$|V|*(|V|-1)/2$&Costo&Costo*\\ \hline
+53&70027 & 79800 &9773&8908\\\hline
+79&163863 &191890 &28027&27073\\ \hline
+131 & 3353846 &4005865& 652019&652019 \\ \hline
+133 & 4005420 & 4005865 &445&445  \\ \hline
+139 & 3515629 &4238416 &722787&722787\\ \hline
+147 &4160168 &4308580 &148412&148412\\ \hline
+159 & 3533156 &4317391 &784235& 784235 \\ \hline
+161 &4295123 &4317391 &22268& 22268 \\ \hline
+\end{tabular}   
+}       
+\caption{Instancias fuertemente conexas}
+\end{table} 
+\end{itemize}
+\end{frame}
+\subsection{Búsqueda local con escala estocástica y evaluación incremental}
+\begin{frame}{Búsqueda local}
+\begin{itemize}
+\item Para cada componente conexa de la gráfica se implementó una búsqueda local con escalada estocástica y evaluación incremental. 
+\item La vecindad de una solución consiste en todas las soluciones que difieren en un solo vértice.
+
+\item Para poder hacer la evaluación incremental, se observó que al cambiar un $v$ vértice de cluster $C1$ a un cluster $C2$ se deben sumar y restar ciertas aristas:
+\begin{enumerate}
+\item - Cada arista que se sumo al agregar $v$ a $C1$ debe ser restada del costo actual.
+\item + Cada arista original de $v$ con el resto de vértices de $C1$ debe ser sumada.
+\item - Por cada vértice en $C2$ no adyacente a $v$ se debe sumar una arista.
+\item + Cada arista original entre v y los vértices de $C2$ debe ser restada.
+\end{enumerate}
+\end{itemize}
+\end{frame}
+\begin{frame}{Resultados}
+
+\end{frame}
+\end{document}
